@@ -5,5 +5,8 @@ USERSRCS += $(LCEC_CONF_SRC)
 	$(ECHO) Linking $(notdir $@)
 	$(Q)$(CC) $(LDFLAGS) -o $@ $^ -lexpat
 TARGETS += ../bin/lcec_conf
+
+# compile userland version with libethercat
+$(RTLIBDIR)/lcec$(MODULE_EXT): EXTRA_LDFLAGS += -lethercat
 endif
 
