@@ -76,6 +76,8 @@
 #define RTAPI_INC_LIST_H        "userpci/list.h"
 #define RTAPI_INC_SLAB_H        "userpci/slab.h"
 #define RTAPI_INC_STRING_H      "userpci/string.h"
+#define RTAPI_INC_SCHED_H       "userpci/sched.h"
+#define RTAPI_INC_JIFFIES_H     "userpci/jiffies.h"
 
 #else
 
@@ -88,6 +90,8 @@
 #define RTAPI_INC_LIST_H        "linux/list.h"
 #define RTAPI_INC_SLAB_H        "linux/slab.h"
 #define RTAPI_INC_STRING_H      "linux/string.h"
+#define RTAPI_INC_SCHED_H       "linux/sched.h"
+#define RTAPI_INC_JIFFIES_H     "linux/jiffies.h"
 
 #endif /* BUILD_SYS_USER_DSO */
 
