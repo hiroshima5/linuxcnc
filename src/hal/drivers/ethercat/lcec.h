@@ -18,8 +18,12 @@
 #ifndef _LCEC_H_
 #define _LCEC_H_
 
-#include <linux/ctype.h>
-#include <linux/slab.h>
+#include "config_module.h"
+#include RTAPI_INC_SCHED_H
+#include RTAPI_INC_JIFFIES_H
+#include RTAPI_INC_CTYPE_H
+#include RTAPI_INC_SLAB_H
+#include RTAPI_INC_STRING_H
 
 #include "hal.h"
 
