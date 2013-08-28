@@ -190,6 +190,7 @@ SUBDIRS := \
 	\
 	hal/components \
 	hal/drivers \
+	hal/drivers/ethercat \
 	hal/user_comps/devices \
 	hal/user_comps/mb2hal \
 	hal/user_comps \
@@ -1166,6 +1167,24 @@ obj-$(CONFIG_PROBE_PARPORT) += probe_parport.o
 probe_parport-objs := hal/drivers/probe_parport.o $(MATHSTUB)
 endif
 
+obj-$(CONFIG_LCEC) += lcec.o
+lcec-objs := \
+    hal/drivers/ethercat/lcec.o \
+    hal/drivers/ethercat/lcec_generic.o \
+    hal/drivers/ethercat/lcec_el1xxx.o \
+    hal/drivers/ethercat/lcec_el2521.o \
+    hal/drivers/ethercat/lcec_el2xxx.o \
+    hal/drivers/ethercat/lcec_el31x2.o \
+    hal/drivers/ethercat/lcec_el40x2.o \
+    hal/drivers/ethercat/lcec_el41x2.o \
+    hal/drivers/ethercat/lcec_el5101.o \
+    hal/drivers/ethercat/lcec_el5151.o \
+    hal/drivers/ethercat/lcec_el5152.o \
+    hal/drivers/ethercat/lcec_el7342.o \
+    hal/drivers/ethercat/lcec_el95xx.o \
+    hal/drivers/ethercat/lcec_stmds5k.o \
+    $(MATHSTUB)
+
 obj-$(CONFIG_CLASSICLADDER_RT) += classicladder_rt.o
 classicladder_rt-objs := hal/classicladder/module_hal.o $(MATHSTUB)
 classicladder_rt-objs += hal/classicladder/arithm_eval.o
@@ -1332,6 +1351,7 @@ $(RTLIBDIR)/streamer$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(streamer-objs))
 $(RTLIBDIR)/sampler$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(sampler-objs))
 $(RTLIBDIR)/hal_parport$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(hal_parport-objs))
 $(RTLIBDIR)/probe_parport$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(probe_parport-objs))
+$(RTLIBDIR)/lcec$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(lcec-objs))
 
 ifeq ($(BUILD_SYS),user-dso)
 $(RTLIBDIR)/probe_parport$(MODULE_EXT): $(addprefix $(OBJDIR)/,$(probe_parport-objs))
