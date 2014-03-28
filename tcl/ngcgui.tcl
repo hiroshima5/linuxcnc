@@ -25,7 +25,6 @@
 #          [-o output_file]
 #          [-a autosend_file]            (autosend to axis default:auto.ngc)
 #          [--noauto]                    (no autosend to axis)
-#          [-N | --nom2]                 (no m2 terminator (use %))
 #          [--font [big|small|fontspec]] (default: "Helvetica -10 bold")
 #          [--horiz|--vert]              (default: --horiz)
 #          [--cwidth comment_width]      (width of comment field)
@@ -419,7 +418,6 @@
 #       noauto     -- noautosend (makeFile, then manually send)
 #       noiframe   -- put image inside a toplevel instead of a frame
 #                     so all controls are available
-#       nom2       -- no m2 terminator (use %)
 #
 # 25. When ngcgui pages are embedded in the axis gui and the user
 #     is allowed to open new subroutines, the initial starting directroy
@@ -1006,9 +1004,6 @@ proc ::ngcgui::preset {hdl ay_name} {
   set ::ngc(opt,noauto)     0 ;# default is autosend
   set ::ngc(opt,noinput)    0 ;# default is to show an input frame
   set ::ngc(opt,noiframe)   0 ;# default uses a separate toplevel for img
-
-  set ::ngc(opt,nom2)       0 ;# default use % at start and end
-                               #         instead of m2 at 3end
 } ;# preset
 
 proc ::ngcgui::gui {hdl mode args} {
@@ -2009,11 +2004,6 @@ if {0} {
         return
       }
 
-      if {$::ngc(opt,nom2) || [info exists ::ngcgui::control(any,nom2)]} {
-        puts $fout "%"
-        puts $fout "($::ngc(any,app): nom2 option)"
-      }
-
       set featurect 0;
       set date [dt]
       foreach thdl $hdllist {
@@ -2034,14 +2024,10 @@ if {0} {
         }
       } ;# for hdllist
 
-      if {$::ngc(opt,nom2) || [info exists ::ngcgui::control(any,nom2)]} {
-        puts  $fout "%"
+      if $::ngc($endhdl,verbose) {
+        puts  $fout "($::ngc(any,app): m2 [_ "line added"]) m2 (g54 [_ "activated"])"
       } else {
-        if $::ngc($endhdl,verbose) {
-          puts  $fout "($::ngc(any,app): m2 [_ "line added"]) m2 (g54 [_ "activated"])"
-        } else {
-          puts  $fout "m2 (m2 [_ "restores"] g54)"
-        }
+        puts  $fout "m2 (m2 [_ "restores"] g54)"
       }
       close $fout
 
@@ -3024,7 +3010,7 @@ proc ::ngcgui::status {hdl args} {
             auto dir savect font aspect retainvalues\
             expandsubroutine chooser\
             }
-  set optitems {noauto nonew noremove noiframe noinput nom2}
+  set optitems {noauto nonew noremove noiframe noinput }
   set anyitems {app pollms aspect width,comment width,varname qid}
 
   set text "[_ "Status items"]:"
@@ -3209,7 +3195,6 @@ proc ::ngcgui::usage {hdl ay_name} {
          \[-o output_file\]
          \[-a autosend_file]\            (autosend to axis default:$aname)
          \[--noauto]\                    (no autosend to axis)
-         \[-N | --nom2]\                 (no m2 terminator (use %))
          \[--font \[big|small|fontspec\]\] (default: $dfont)
          \[--horiz|--vert\]              (default: --horiz)
          \[--cwidth comment_width]\      (width of comment field)
@@ -3563,7 +3548,6 @@ proc ::ngcgui::embed_in_axis_tab {f args} {
   if {[lsearch $options noauto    ] >=0} {set ::ngc(opt,noauto)     1}
   if {[lsearch $options noinput   ] >=0} {set ::ngc(opt,noinput)    1}
   if {[lsearch $options noiframe  ] >=0} {set ::ngc(opt,noiframe)   1}
-  if {[lsearch $options nom2      ] >=0} {set ::ngc(opt,nom2)       1}
 
   if {[lsearch $options expandsub ] >=0} {set ::ngc($hdl,expandsubroutine)   1}
 
@@ -3963,11 +3947,7 @@ if [catch {
                  }
         --cwidth {set ::ngcgui::control(any,width,comment) [lindex $::argv 1]
                   set ::argv [lreplace $::argv 0 1]
-                 }
-        -N       -
-        --nom2   {set ::ngcgui::control(any,nom2) 0
-                  set ::argv [lreplace $::argv 0 0]
-                 }
+                  }
         -S          -
         --subfile  {set ::ngcgui::control($hdl,fname,subfile) [lindex $::argv 1]
                      set ::argv [lreplace $::argv 0 1]
