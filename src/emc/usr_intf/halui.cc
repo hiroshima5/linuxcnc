@@ -1958,9 +1958,22 @@ static void check_hal_changes()
 	bit = (fabs(floatt) > new_halui_data.jog_deadband);
 	if ((floatt != old_halui_data.jog_analog[joint]) || (bit && jog_speed_changed)) {
 	    if (bit)
-		sendJogCont(joint,(new_halui_data.jog_speed) * (new_halui_data.jog_analog[joint]),axisnacho); //temporalmente mandamos axisnacho
+	    {
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+			{
+				axisnacho[joint]=new_halui_data.jog_analog[joint];
+				axisnacho[6]=1;
+			}
+			else
+				sendJogCont(joint,(new_halui_data.jog_speed) * (new_halui_data.jog_analog[joint]),axisnacho); //temporalmente mandamos axisnacho
+		}
 	    else
-		sendJogStop(joint);
+	    {
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+				axisnacho[6]=1; //el del eje sera 0
+			else 
+				sendJogStop(joint);
+		}
 	    old_halui_data.jog_analog[joint] = floatt;
 	}
 
