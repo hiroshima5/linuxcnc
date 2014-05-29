@@ -1374,14 +1374,35 @@ static int sendJogStop(int axis)
         return emcCommandWaitReceived(emcCommandSerialNumber);
     } else {
 	emc_set_teleop_vector.serial_number = ++emcCommandSerialNumber;
-        ZERO_EMC_POSE(emc_set_teleop_vector.vector);
+        //ZERO_EMC_POSE(emc_set_teleop_vector.vector);
+    switch (axis) {
+	case 0:
+	    emc_set_teleop_vector.vector.tran.x = 0;
+	    break;
+	case 1:
+	    emc_set_teleop_vector.vector.tran.y = 0;
+	    break;
+	case 2:
+	    emc_set_teleop_vector.vector.tran.z = 0;
+	    break;
+	case 3:
+	    emc_set_teleop_vector.vector.a = 0;
+	    break;
+	case 4:
+	    emc_set_teleop_vector.vector.b = 0;
+	    break;
+	case 5:
+	    emc_set_teleop_vector.vector.c = 0;
+	    break;
+	}
+    
 	emcCommandBuffer->write(emc_set_teleop_vector);
 
         return emcCommandWaitReceived(emcCommandSerialNumber);
     }
 }
 
-static int sendJogCont(int axis, double speed)
+static int sendJogCont(int axis, double speed, int axisnacho[] )
 {
     EMC_AXIS_JOG emc_axis_jog_msg;
     EMC_TRAJ_SET_TELEOP_VECTOR emc_set_teleop_vector;
@@ -1400,8 +1421,21 @@ static int sendJogCont(int axis, double speed)
 	emcCommandBuffer->write(emc_axis_jog_msg);
     } else {
 	emc_set_teleop_vector.serial_number = ++emcCommandSerialNumber;
-        ZERO_EMC_POSE(emc_set_teleop_vector.vector);
-
+        //ZERO_EMC_POSE(emc_set_teleop_vector.vector);
+	
+	if (axisnacho[0]!=0)
+		emc_set_teleop_vector.vector.tran.x = speed*axisnacho[0] / 60.0;
+	if (axisnacho[1]!=0)
+		emc_set_teleop_vector.vector.tran.y = speed*axisnacho[1] / 60.0;
+	if (axisnacho[2]!=0)
+		emc_set_teleop_vector.vector.tran.z = speed*axisnacho[2] / 60.0;
+	if (axisnacho[3]!=0)
+		emc_set_teleop_vector.vector.a = speed*axisnacho[3] / 60.0;
+	if (axisnacho[4]!=0)
+		emc_set_teleop_vector.vector.b = speed*axisnacho[4] / 60.0;
+	if (axisnacho[5]!=0)
+		emc_set_teleop_vector.vector.c = speed*axisnacho[5] / 60.0;
+	/*
 	switch (axis) {
 	case 0:
 	    emc_set_teleop_vector.vector.tran.x = speed / 60.0;
@@ -1422,6 +1456,7 @@ static int sendJogCont(int axis, double speed)
 	    emc_set_teleop_vector.vector.c = speed / 60.0;
 	    break;
 	}
+	*/
 	emcCommandBuffer->write(emc_set_teleop_vector);
     }
 
@@ -1669,6 +1704,7 @@ static void check_hal_changes()
     int js;
     hal_float_t floatt;
     int jog_speed_changed;
+    int axisnacho[7]={0};
 
     local_halui_str new_halui_data_mutable;
     copy_hal_data(*halui_data, new_halui_data_mutable);
@@ -1860,8 +1896,9 @@ static void check_hal_changes()
         jog_speed_changed = 0;
     }
 
-    
+    axisnacho[6]=0;
     for (joint=0; joint < num_axes; joint++) {
+		axisnacho[joint]=0;
 	if (check_bit_changed(new_halui_data.joint_home[joint], old_halui_data.joint_home[joint]) != 0)
 	    sendHome(joint);
 
@@ -1871,26 +1908,57 @@ static void check_hal_changes()
 	bit = new_halui_data.jog_minus[joint];
 	if ((bit != old_halui_data.jog_minus[joint]) || (bit && jog_speed_changed)) {
 	    if (bit != 0)
-		sendJogCont(joint,-new_halui_data.jog_speed);
+		{
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+			{
+				axisnacho[joint]=-1;
+				axisnacho[6]=1; //cambio en algun eje 
+			}
+			else 
+				sendJogCont(joint,-new_halui_data.jog_speed,axisnacho);
+		}	
+		
 	    else
-		sendJogStop(joint);
+		{
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+				axisnacho[6]=1; //el del eje sera 0
+			else 
+				sendJogStop(joint);
+		}
 	    old_halui_data.jog_minus[joint] = bit;
 	}
+	if (bit!=0) 
+		axisnacho[joint]=-1;
 
 	bit = new_halui_data.jog_plus[joint];
 	if ((bit != old_halui_data.jog_plus[joint]) || (bit && jog_speed_changed)) {
 	    if (bit != 0)
-		sendJogCont(joint,new_halui_data.jog_speed);
+	    {
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+			{
+				axisnacho[joint]=1;
+				axisnacho[6]=1; //cambio en algun eje 
+			}
+			else 
+				sendJogCont(joint,new_halui_data.jog_speed,axisnacho);
+		}	
 	    else
-		sendJogStop(joint);
+	    {
+			if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP)
+				axisnacho[6]=1; //el del eje sera 0
+			else 
+				sendJogStop(joint);
+		}
 	    old_halui_data.jog_plus[joint] = bit;
 	}
+	if (bit!=0) 
+		axisnacho[joint]=1;
 
 	floatt = new_halui_data.jog_analog[joint];
 	bit = (fabs(floatt) > new_halui_data.jog_deadband);
 	if ((floatt != old_halui_data.jog_analog[joint]) || (bit && jog_speed_changed)) {
 	    if (bit)
-		sendJogCont(joint,(new_halui_data.jog_speed) * (new_halui_data.jog_analog[joint]));
+		sendJogCont(joint,(new_halui_data.jog_speed) * (new_halui_data.jog_analog[joint]),axisnacho); //temporalmente mandamos axisnacho
 	    else
 		sendJogStop(joint);
 	    old_halui_data.jog_analog[joint] = floatt;
@@ -1919,8 +1987,14 @@ static void check_hal_changes()
 	    } 
 	    old_halui_data.joint_home[joint] = bit;
 	}
-    }
+    } //FINAL DEL FOR
     
+    if (axisnacho[6]==1) //ha habido cambio en algun eje
+		sendJogCont(joint,new_halui_data.jog_speed,axisnacho);
+	
+	for (joint=0; joint<num_axes;joint++)
+		axisnacho[joint]=0;
+	
     if (select_changed >= 0) {
 	for (joint = 0; joint < num_axes; joint++) {
 	    if (joint != select_changed) {
@@ -1941,7 +2015,11 @@ static void check_hal_changes()
     js = new_halui_data.joint_selected;
     if ((bit != old_halui_data.jog_minus[num_axes]) || (bit && jog_speed_changed)) {
         if (bit != 0)
-	    sendJogCont(js, -new_halui_data.jog_speed);
+        {
+			//solo el seleccionado
+			axisnacho[js]=1;
+			sendJogCont(js, -new_halui_data.jog_speed,axisnacho);
+		}
 	else
 	    sendJogStop(js);
 	old_halui_data.jog_minus[num_axes] = bit;
@@ -1951,7 +2029,11 @@ static void check_hal_changes()
     js = new_halui_data.joint_selected;
     if ((bit != old_halui_data.jog_plus[num_axes]) || (bit && jog_speed_changed)) {
         if (bit != 0)
-	    sendJogCont(js,new_halui_data.jog_speed);
+        {
+			//solo el seleccionado
+			axisnacho[js]=1;
+			sendJogCont(js, new_halui_data.jog_speed,axisnacho);
+		}
 	else
 	    sendJogStop(js);
 	old_halui_data.jog_plus[num_axes] = bit;
