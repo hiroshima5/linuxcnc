@@ -1976,6 +1976,8 @@ static void check_hal_changes()
 		}
 	    old_halui_data.jog_analog[joint] = floatt;
 	}
+	if (bit!=0) 
++		axisnacho[joint]=floatt;
 
 	bit = new_halui_data.jog_increment_plus[joint];
 	if (bit != old_halui_data.jog_increment_plus[joint]) {
